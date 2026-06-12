@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     
     <!-- Tailwind CSS & FontAwesome -->
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-gray-100 font-sans text-gray-800 antialiased">
@@ -77,18 +77,21 @@
 
         <!-- Members List -->
         <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
+            <div class="p-4 bg-gray-50 font-bold border-b text-gray-700 flex justify-between items-center">
+                <span>📊 सदस्यवार चंदा विवरण (किसने कितना दिया)</span>
+            </div>
             <div id="members-list" class="divide-y divide-gray-100 max-h-[350px] overflow-y-auto"></div>
         </div>
 
         <!-- Expense Section -->
         <div class="bg-white rounded-xl shadow-sm overflow-hidden mb-6 border border-red-100">
             <div class="p-4 bg-red-50 border-b border-red-100 flex justify-between items-center">
-                <h3 class="font-bold text-red-800"><i class="fa-solid fa-wallet mr-1"></i> छोटे-मोटे खर्चों का हिसाब</h3>
+                <h3 class="font-bold text-red-800"><i class="fa-solid fa-wallet mr-1"></i> 💸 खर्चों का पूरा विवरण (कहाँ-कहाँ खर्च हुए)</h3>
                 <button onclick="addExpense()" class="bg-red-600 text-white text-xs px-3 py-1.5 rounded-lg font-bold">
                     <i class="fa-solid fa-plus mr-1"></i> नया खर्च जोड़ें
                 </button>
             </div>
-            <div id="expenses-list" class="divide-y divide-gray-100 max-h-[180px] overflow-y-auto"></div>
+            <div id="expenses-list" class="divide-y divide-gray-100 max-h-[250px] overflow-y-auto"></div>
         </div>
 
         <!-- Controls -->
@@ -103,7 +106,7 @@
     </div>
 
     <script>
-        // 🔐 परमानेंट नो-टोकन क्लाउड सर्विस (यह कभी ब्लॉक नहीं होगी)
+        // 🔐 परमानेंट नो-टोकन क्लाउड डेटाबेस (यह कभी ब्लॉक नहीं होगा)
         const CLOUD_DATABASE_URL = "https://api.keyvalue.xyz/v1/7d3a8e2b9c5f4a1b8e6d2c3f4a5b6c7d/mandalData";
 
         const ADMIN_PASSWORD = "9680"; 
@@ -116,9 +119,9 @@
         let currentFilter = 'all';
         let searchQuery = '';
 
-        // सर्वर से डेटा लोड करना
+        // सर्वर से लाइव डेटा लोड करना
         async function loadDataFromGitHub() {
-            document.getElementById('sync-status').innerText = "🔄 100 सालों का रिकॉर्ड सर्वर से लोड हो रहा है...";
+            document.getElementById('sync-status').innerText = "🔄 लाइव डेटाबेस से कनेक्ट हो रहा है...";
             try {
                 const response = await fetch(CLOUD_DATABASE_URL);
                 if (response.ok) {
@@ -135,7 +138,7 @@
             } catch (err) {
                 if(localStorage.getItem('mandal_backup')) {
                     mandalData = JSON.parse(localStorage.getItem('mandal_backup'));
-                    document.getElementById('sync-status').innerText = "✅ लोकल मेमोरी से सुरक्षित लोडेड!";
+                    document.getElementById('sync-status').innerText = "✅ ऑफलाइन बैकअप से लोडेड";
                 } else {
                     document.getElementById('sync-status').innerText = "❌ कनेक्शन एरर!";
                 }
@@ -145,8 +148,8 @@
 
         // सर्वर पर डेटा पक्का सेव करना
         async function saveDataToGitHub() {
-            document.getElementById('sync-status').innerText = "📤 क्लाउड सर्वर पर पक्का सेव हो रहा है...";
-            localStorage.setItem('mandal_backup', JSON.stringify(mandalData)); // फोन में बैकअप रखें
+            document.getElementById('sync-status').innerText = "📤 क्लाउड पर लाइव सेव हो रहा है...";
+            localStorage.setItem('mandal_backup', JSON.stringify(mandalData));
             
             try {
                 const response = await fetch(CLOUD_DATABASE_URL, {
@@ -201,9 +204,13 @@
                 const statusData = yearData.collections[id] || { status: 'pending', amount: 0 };
                 if (name.toLowerCase().includes(searchQuery.toLowerCase()) && (currentFilter === 'all' || statusData.status === currentFilter)) {
                     const item = document.createElement('div');
-                    item.className = "p-3 flex justify-between items-center text-sm border-b border-gray-100 hover:bg-gray-50";
-                    let badge = statusData.status === 'paid' ? `<span class='text-green-600 font-bold'>₹${statusData.amount} जमा</span>` : `<button onclick="markAsPaid('${id}')" class='bg-yellow-100 text-yellow-700 font-bold px-3 py-1 rounded-full text-xs cursor-pointer'>पेंडिंग</button>`;
-                    item.innerHTML = `<div><b>${id.toUpperCase()}</b> - ${name}</div><div>${badge}</div>`;
+                    item.className = "p-4 flex justify-between items-center text-sm border-b border-gray-100 hover:bg-gray-50";
+                    
+                    let badge = statusData.status === 'paid' 
+                        ? `<span class='text-green-600 font-bold bg-green-50 px-3 py-1 rounded-full'>₹${statusData.amount} जमा</span>` 
+                        : `<button onclick="markAsPaid('${id}')" class='bg-yellow-100 text-yellow-700 font-bold px-3 py-1 rounded-full text-xs cursor-pointer hover:bg-yellow-200'>💸 पेंडिंग (जमा करें)</button>`;
+                    
+                    item.innerHTML = `<div><span class="text-gray-400 font-bold mr-2">${id.toUpperCase()}</span> <span class="font-medium text-gray-800">${name}</span></div><div>${badge}</div>`;
                     listContainer.appendChild(item);
                 }
             });
@@ -213,19 +220,19 @@
             if(yearData.expenses && yearData.expenses.length > 0) {
                 yearData.expenses.forEach((exp, idx) => {
                     const item = document.createElement('div');
-                    item.className = "p-3 flex justify-between text-sm border-b border-gray-100";
-                    item.innerHTML = `<div><button onclick="deleteExpense(${idx})" class='text-red-500 mr-2 cursor-pointer'>🗑</button>${exp.title}</div><div class='text-red-600 font-bold'>₹${exp.amount}</div>`;
+                    item.className = "p-4 flex justify-between items-center text-sm border-b border-gray-100 hover:bg-red-50";
+                    item.innerHTML = `<div><button onclick="deleteExpense(${idx})" class='text-red-500 mr-3 cursor-pointer hover:text-red-700'><i class="fa-solid fa-trash-can"></i></button><span class="font-medium text-gray-700">${exp.title}</span></div><div class='text-red-600 font-black bg-red-50 px-3 py-1 rounded-full'>₹${exp.amount}</div>`;
                     expContainer.appendChild(item);
                 });
             } else {
-                expContainer.innerHTML = `<div class="p-4 text-center text-gray-400 text-xs">कोई खर्च दर्ज नहीं है</div>`;
+                expContainer.innerHTML = `<div class="p-6 text-center text-gray-400 text-xs"><i class="fa-solid fa-receipt block text-lg mb-2"></i>कोई खर्च दर्ज नहीं है</div>`;
             }
         }
 
         async function markAsPaid(id) {
-            const pass = prompt("पासवर्ड डालें:");
+            const pass = prompt("एडमिन पासवर्ड डालें:");
             if (pass === ADMIN_PASSWORD) {
-                const amt = prompt("रकम दर्ज करें:", "500");
+                const amt = prompt("चंदा राशि दर्ज करें (₹):", "500");
                 if (amt && !isNaN(amt)) {
                     mandalData.years[currentYear].collections[id] = { status: 'paid', amount: parseInt(amt) };
                     refreshAll();
@@ -235,10 +242,10 @@
         }
 
         async function addExpense() {
-            const pass = prompt("पासवर्ड डालें:");
+            const pass = prompt("एडमिन पासवर्ड डालें:");
             if (pass === ADMIN_PASSWORD) {
-                const title = prompt("खर्च का नाम:");
-                const amt = prompt("रकम:");
+                const title = prompt("खर्च का विवरण (किस चीज में खर्च हुआ):");
+                const amt = prompt("खर्च की रकम (₹):");
                 if (title && amt && !isNaN(amt)) {
                     mandalData.years[currentYear].expenses.push({ title, amount: parseInt(amt) });
                     refreshAll();
@@ -248,7 +255,7 @@
         }
 
         async function deleteExpense(idx) {
-            if (prompt("पासवर्ड:") === ADMIN_PASSWORD) {
+            if (prompt("हटाने के लिए पासवर्ड डालें:") === ADMIN_PASSWORD) {
                 mandalData.years[currentYear].expenses.splice(idx, 1);
                 refreshAll();
                 await saveDataToGitHub();
@@ -256,8 +263,8 @@
         }
 
         async function addNewMember() {
-            if (prompt("पासवर्ड:") === ADMIN_PASSWORD) {
-                const name = prompt("नए सदस्य का नाम:");
+            if (prompt("नया सदस्य जोड़ने के लिए पासवर्ड:") === ADMIN_PASSWORD) {
+                const name = prompt("नए मंडल सदस्य का पूरा नाम लिखें:");
                 if (name) {
                     const nextId = `m${Object.keys(mandalData.memberNames).length + 1}`;
                     mandalData.memberNames[nextId] = name;
@@ -268,10 +275,10 @@
         }
 
         async function editMemberName() {
-            if (prompt("पासवर्ड:") === ADMIN_PASSWORD) {
+            if (prompt("नाम सुधारने के लिए पासवर्ड डालें:") === ADMIN_PASSWORD) {
                 const id = prompt("सदस्य की ID दर्ज करें (जैसे: m1, m2):");
                 if(id && mandalData.memberNames[id]) {
-                    const newName = prompt("नया नाम दर्ज करें:", mandalData.memberNames[id]);
+                    const newName = prompt("सही नाम दर्ज करें:", mandalData.memberNames[id]);
                     if(newName) {
                         mandalData.memberNames[id] = newName;
                         refreshAll();
@@ -293,6 +300,7 @@
         }
         document.getElementById('search-input').addEventListener('input', (e) => { searchQuery = e.target.value; refreshAll(); });
 
+        // डेटाबेस लोड शुरू करें
         loadDataFromGitHub();
     </script>
 </body>
